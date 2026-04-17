@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>货代GT/LT配比计算器</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  *{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
+  }
+  body{
+    background:#f0f2f5;
+    padding:20px;
+    max-width:520px;
+    margin:40px auto;
+  }
+  .container{
+    background:#fff;
+    border-radius:16px;
+    padding:30px;
+    box-shadow:0 6px 24px rgba(0,0,0,0.06);
+  }
+  .title{
+    text-align:center;
+    font-size:22px;
+    color:#222;
+    margin-bottom:26px;
+    font-weight:600;
+  }
+  .form-item{
+    margin-bottom:18px;
+  }
+  .label{
+    font-size:14px;
+    color:#555;
+    margin-bottom:8px;
+    display:block;
+  }
+  .input-row{
+    display:flex;
+    gap:12px;
+  }
+  .input-row input{
+    flex:1;
+  }
+  input,select{
+    width:100%;
+    padding:12px 14px;
+    border:1px solid #e0e3e9;
+    border-radius:10px;
+    font-size:15px;
+    outline:none;
+    transition:border-color 0.2s;
+  }
+  input:focus,select:focus{
+    border-color:#3E63DD;
+  }
+  .btn{
+    width:100%;
+    padding:14px;
+    background:#3E63DD;
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:500;
+    cursor:pointer;
+    margin-top:10px;
+    transition:background 0.2s;
+  }
+  .btn:hover{
+    background:#3251bb;
+  }
+  .copy-btn{
+    background:#10b981;
+    margin-top:12px;
+  }
+  .copy-btn:hover{
+    background:#059669;
+  }
+  .result-box{
+    margin-top:24px;
+    padding:20px;
+    background:#f7f9fc;
+    border-radius:12px;
+    line-height:1.8;
+    display:none;
+  }
+  .line{
+    display:flex;
+    justify-content:space-between;
+    font-size:15px;
+    margin:4px 0;
+  }
+  .line strong{
+    color:#222;
+  }
+  .quote-text{
+    margin-top:12px;
+    padding:12px;
+    background:#eef6ff;
+    border-radius:8px;
+    font-family: monospace;
+    white-space: pre-line;
+    font-size:14px;
+  }
+  .tip{
+    color:#666;
+    font-size:13px;
+    text-align:center;
+    margin-top:8px;
+  }
+  /* 自定义配比样式 */
+  #customRatioBox{
+    display:none;
+    margin-top:10px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="title">GT/LT 配比价格计算器</div>
+
+  <div class="form-item">
+    <div class="label">GT 价格</div>
+    <div class="input-row">
+      <input type="number" id="gt20" placeholder="20GP">
+      <input type="number" id="gt40" placeholder="40HQ">
+    </div>
+  </div>
+
+  <div class="form-item">
+    <div class="label">LT 价格（默认已填）</div>
+    <div class="input-row">
+      <input type="number" id="lt20" value="1240">
+      <input type="number" id="lt40" value="2100">
+    </div>
+  </div>
+
+  <div class="form-item">
+    <div class="label">配比比例（GT:LT）</div>
+    <select id="ratio" onchange="toggleCustomRatio()">
+      <option value="9:1">GT:LT = 9:1</option>
+      <option value="8:2">GT:LT = 8:2</option>
+      <option value="7:3">GT:LT = 7:3</option>
+      <option value="6:4" selected>GT:LT = 6:4</option>
+      <option value="5:5">GT:LT = 5:5</option>
+      <option value="4:6">GT:LT = 4:6</option>
+      <option value="3:7">GT:LT = 3:7</option>
+      <option value="2:8">GT:LT = 2:8</option>
+      <option value="1:9">GT:LT = 1:9</option>
+      <option value="custom">🔧 自定义比例</option>
+    </select>
+    <!-- 自定义配比输入框 -->
+    <div id="customRatioBox" class="input-row">
+      <input type="number" id="customGT" placeholder="GT占比" min="0" max="10" step="0.1">
+      <input type="number" id="customLT" placeholder="LT占比" min="0" max="10" step="0.1">
+    </div>
+  </div>
+
+  <div class="form-item">
+    <div class="label">价格有效期</div>
+    <input type="text" id="validDate" placeholder="例如：4.1-4.30">
+  </div>
+
+  <button class="btn" onclick="calcPrice()">计算配比价格</button>
+  <button class="btn copy-btn" onclick="copyQuote()" style="display:none" id="copyBtn">一键复制报价</button>
+
+  <div class="result-box" id="resultBox">
+    <div class="line">配比方式：<strong id="showRatio"></strong></div>
+    <div class="line">20GP 单价：<strong id="price20"></strong></div>
+    <div class="line">40HQ 单价：<strong id="price40"></strong></div>
+    <div class="quote-text" id="quoteText"></div>
+    <div class="tip" id="copyTip"></div>
+  </div>
+</div>
+
+<script>
+let quoteContent = '';
+
+// 切换显示/隐藏自定义配比
+function toggleCustomRatio() {
+  const ratio = document.getElementById('ratio').value;
+  const customBox = document.getElementById('customRatioBox');
+  customBox.style.display = ratio === 'custom' ? 'flex' : 'none';
+}
+
+// 计算价格
+function calcPrice() {
+  const gt20 = +document.getElementById('gt20').value || 0;
+  const gt40 = +document.getElementById('gt40').value || 0;
+  const lt20 = +document.getElementById('lt20').value || 0;
+  const lt40 = +document.getElementById('lt40').value || 0;
+  const ratioVal = document.getElementById('ratio').value;
+  const validDate = document.getElementById('validDate').value.trim();
+  
+  let g = 0, l = 0, ratioText = '';
+
+  // 固定配比逻辑
+  if(ratioVal !== 'custom'){
+    ratioText = document.getElementById('ratio').options[document.getElementById('ratio').selectedIndex].text;
+    const [gt, lt] = ratioVal.split(':').map(Number);
+    g = gt / 10;
+    l = lt / 10;
+  } else {
+    // 自定义配比逻辑
+    const customGT = +document.getElementById('customGT').value || 0;
+    const customLT = +document.getElementById('customLT').value || 0;
+    g = customGT / 10;
+    l = customLT / 10;
+    ratioText = `GT:LT = ${customGT}:${customLT}`;
+  }
+
+  // 计算结果
+  const res20 = (gt20 * g + lt20 * l).toFixed(0);
+  const res40 = (gt40 * g + lt40 * l).toFixed(0);
+
+  // 生成报价文本
+  let quote = '';
+  if (validDate) quote += `MSC ${validDate}\n`;
+  quote += `${ratioText.replace('GT:LT = ','GT:LT ')}\n`;
+  quote += `USD ${res20}/${res40}`;
+  quoteContent = quote;
+
+  // 渲染结果
+  document.getElementById('showRatio').innerText = ratioText;
+  document.getElementById('price20').innerText = res20;
+  document.getElementById('price40').innerText = res40;
+  document.getElementById('quoteText').innerText = quote;
+  document.getElementById('resultBox').style.display = 'block';
+  document.getElementById('copyBtn').style.display = 'block';
+  document.getElementById('copyTip').innerText = '';
+}
+
+// 一键复制
+function copyQuote() {
+  if (!quoteContent) return;
+  navigator.clipboard.writeText(quoteContent).then(() => {
+    document.getElementById('copyTip').innerText = '✅ 复制成功，可直接粘贴发给客户';
+  }).catch(() => {
+    document.getElementById('copyTip').innerText = '❌ 复制失败，请手动复制';
+  });
+}
+</script>
+</body>
+</html>
