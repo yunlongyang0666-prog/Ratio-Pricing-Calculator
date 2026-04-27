@@ -113,7 +113,6 @@
     text-align:center;
     margin-top:8px;
   }
-  /* 自定义配比样式 */
   #customRatioBox{
     display:none;
     margin-top:10px;
@@ -135,8 +134,8 @@
   <div class="form-item">
     <div class="label">LT 价格（默认已填）</div>
     <div class="input-row">
-      <input type="number" id="lt20" value="1240">
-      <input type="number" id="lt40" value="2100">
+      <input type="number" id="lt20" value="1232">
+      <input type="number" id="lt40" value="2084">
     </div>
   </div>
 
@@ -154,7 +153,6 @@
       <option value="1:9">GT:LT = 1:9</option>
       <option value="custom">🔧 自定义比例</option>
     </select>
-    <!-- 自定义配比输入框 -->
     <div id="customRatioBox" class="input-row">
       <input type="number" id="customGT" placeholder="GT占比" min="0" max="10" step="0.1">
       <input type="number" id="customLT" placeholder="LT占比" min="0" max="10" step="0.1">
@@ -181,14 +179,12 @@
 <script>
 let quoteContent = '';
 
-// 切换显示/隐藏自定义配比
 function toggleCustomRatio() {
   const ratio = document.getElementById('ratio').value;
   const customBox = document.getElementById('customRatioBox');
   customBox.style.display = ratio === 'custom' ? 'flex' : 'none';
 }
 
-// 计算价格
 function calcPrice() {
   const gt20 = +document.getElementById('gt20').value || 0;
   const gt40 = +document.getElementById('gt40').value || 0;
@@ -199,14 +195,12 @@ function calcPrice() {
   
   let g = 0, l = 0, ratioText = '';
 
-  // 固定配比逻辑
   if(ratioVal !== 'custom'){
     ratioText = document.getElementById('ratio').options[document.getElementById('ratio').selectedIndex].text;
     const [gt, lt] = ratioVal.split(':').map(Number);
     g = gt / 10;
     l = lt / 10;
   } else {
-    // 自定义配比逻辑
     const customGT = +document.getElementById('customGT').value || 0;
     const customLT = +document.getElementById('customLT').value || 0;
     g = customGT / 10;
@@ -214,18 +208,15 @@ function calcPrice() {
     ratioText = `GT:LT = ${customGT}:${customLT}`;
   }
 
-  // 计算结果
-  const res20 = (gt20 * g + lt20 * l).toFixed(0);
-  const res40 = (gt40 * g + lt40 * l).toFixed(0);
+  const res20 = Math.round(gt20 * g + lt20 * l);
+  const res40 = Math.round(gt40 * g + lt40 * l);
 
-  // 生成报价文本
   let quote = '';
   if (validDate) quote += `MSC ${validDate}\n`;
   quote += `${ratioText.replace('GT:LT = ','GT:LT ')}\n`;
   quote += `USD ${res20}/${res40}`;
   quoteContent = quote;
 
-  // 渲染结果
   document.getElementById('showRatio').innerText = ratioText;
   document.getElementById('price20').innerText = res20;
   document.getElementById('price40').innerText = res40;
@@ -235,7 +226,6 @@ function calcPrice() {
   document.getElementById('copyTip').innerText = '';
 }
 
-// 一键复制
 function copyQuote() {
   if (!quoteContent) return;
   navigator.clipboard.writeText(quoteContent).then(() => {
